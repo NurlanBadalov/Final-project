@@ -1,0 +1,90 @@
+{% extends "restaurant/base.html" %}
+
+{% block title %}Your cart &middot; Online Restaurant{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <div>
+        <h1>Your cart</h1>
+        <p>Change quantities or remove dishes. The total updates automatically.</p>
+    </div>
+    <a class="btn btn-outline" href="{% url 'restaurant:product_list' %}">Continue shopping</a>
+</section>
+
+{% if items %}
+    <div class="cart-layout">
+        <div class="cart-items">
+            {% for item in items %}
+                <article class="cart-item">
+                    {% if item.dish.image %}
+                        <img class="cart-thumb" src="{{ item.dish.image.url }}"
+                             alt="{{ item.dish.name }}">
+                    {% else %}
+                        <div class="cart-thumb" aria-hidden="true"></div>
+                    {% endif %}
+
+                    <div class="cart-item-info">
+                        <h2>{{ item.dish.name }}</h2>
+                        <p>{{ item.dish.category.name }} &middot; ${{ item.dish.price }} each</p>
+                    </div>
+
+                    <div class="quantity-control" aria-label="Quantity controls">
+                        <form method="post"
+                              action="{% url 'restaurant:cart_item_decrease' item.pk %}">
+                            {% csrf_token %}
+                            <button class="qty-btn" type="submit"
+                                    aria-label="Decrease quantity of {{ item.dish.name }}"
+                                    title="Decrease quantity">&minus;</button>
+                        </form>
+                        <span class="quantity">{{ item.quantity }}</span>
+                        <form method="post"
+                              action="{% url 'restaurant:cart_item_increase' item.pk %}">
+                            {% csrf_token %}
+                            <button class="qty-btn" type="submit"
+                                    aria-label="Increase quantity of {{ item.dish.name }}"
+                                    title="Increase quantity">+</button>
+                        </form>
+                    </div>
+
+                    <div class="line-total">${{ item.total_price }}</div>
+
+                    <form method="post"
+                          action="{% url 'restaurant:cart_item_remove' item.pk %}">
+                        {% csrf_token %}
+                        <button class="btn btn-danger btn-small" type="submit"
+                                aria-label="Remove {{ item.dish.name }} from cart">
+                            Remove
+                        </button>
+                    </form>
+                </article>
+            {% endfor %}
+        </div>
+
+        <aside class="cart-summary">
+            <h2>Order summary</h2>
+            <div class="summary-row">
+                <span>Dishes</span>
+                <span>{{ items|length }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Items</span>
+                <span>{{ cart_item_count }}</span>
+            </div>
+            <div class="summary-row summary-total">
+                <span>Total price</span>
+                <span>${{ total }}</span>
+            </div>
+            <p class="summary-note">
+                The total is calculated from the current quantity of every dish.
+                Online payment is outside the scope of this assignment.
+            </p>
+        </aside>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <h2>Your cart is empty</h2>
+        <p>Add some dishes from the menu and they will appear here.</p>
+        <a class="btn btn-primary" href="{% url 'restaurant:product_list' %}">Browse the menu</a>
+    </div>
+{% endif %}
+{% endblock %}

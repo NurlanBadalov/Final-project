@@ -1,0 +1,131 @@
+{% extends "restaurant/base.html" %}
+
+{% block title %}Menu &middot; Online Restaurant{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <div>
+        <h1>Our menu</h1>
+        <p>Browse the dishes and combine filters to find exactly what you want.</p>
+    </div>
+    <span class="result-count">
+        {{ dishes|length }} dish{{ dishes|length|pluralize:"es" }}
+    </span>
+</section>
+
+{# All four filters are submitted together with a GET request and combined in the view with ORM filters. #}
+<form class="filter-panel" method="get" action="{% url 'restaurant:product_list' %}">
+    <div class="filter-grid">
+        <label class="field">
+            <span>Category</span>
+            <select name="category">
+                <option value="">All categories</option>
+                {% for category in categories %}
+                    <option value="{{ category.pk }}"
+                        {% if filters.category == category.pk|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label class="field">
+            <span>Spiciness</span>
+            <select name="spiciness">
+                <option value="">Any level</option>
+                {% for value, label in spiciness_options %}
+                    <option value="{{ value }}"
+                        {% if filters.spiciness == value|stringformat:"s" %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <div class="field checkbox-field">
+            <label class="checkbox">
+                <input type="checkbox" name="contains_walnuts" value="1"
+                       {% if filters.contains_walnuts %}checked{% endif %}>
+                Contains walnuts
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" name="is_vegetarian" value="1"
+                       {% if filters.is_vegetarian %}checked{% endif %}>
+                Vegetarian
+            </label>
+        </div>
+
+        <div class="filter-actions">
+            <button class="btn btn-primary" type="submit">Apply filters</button>
+            <a class="btn btn-ghost" href="{% url 'restaurant:product_list' %}">Reset</a>
+        </div>
+    </div>
+</form>
+
+{% if dishes %}
+    <div class="dish-grid">
+        {% for dish in dishes %}
+            <article class="dish-card">
+                <div class="dish-image-wrap">
+                    {% if dish.image %}
+                        <img class="dish-image" src="{{ dish.image.url }}"
+                             alt="{{ dish.name }}" loading="lazy">
+                    {% endif %}
+                    <span class="category-pill">{{ dish.category.name }}</span>
+                </div>
+
+                <div class="dish-body">
+                    <div class="dish-title-row">
+                        <h2>{{ dish.name }}</h2>
+                        <span class="price">${{ dish.price }}</span>
+                    </div>
+
+                    <div class="meta">
+                        <div class="spice-line">
+                            <span>Spiciness {{ dish.spiciness }}/4</span>
+                            <span class="spice-meter" title="{{ dish.get_spiciness_display }}">
+                                {% for level in "01234" %}
+                                    <span class="spice-dot {% if forloop.counter0 < dish.spiciness %}is-active{% endif %}"></span>
+                                {% endfor %}
+                            </span>
+                        </div>
+                        <div class="tags">
+                            <span class="tag {% if dish.contains_walnuts %}tag-warm{% endif %}">
+                                {% if dish.contains_walnuts %}Contains walnuts{% else %}No walnuts{% endif %}
+                            </span>
+                            <span class="tag {% if dish.is_vegetarian %}tag-green{% endif %}">
+                                {% if dish.is_vegetarian %}Vegetarian{% else %}Not vegetarian{% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    {% if user.is_authenticated %}
+                        <form class="add-form" method="post"
+                              action="{% url 'restaurant:cart_add' dish.pk %}">
+                            {% csrf_token %}
+                            {# Return to the current URL so active filters are preserved. #}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button class="btn btn-primary btn-block" type="submit">
+                                Add to cart
+                            </button>
+                        </form>
+                    {% else %}
+                        {# The backend also enforces @login_required; the link avoids a lost POST. #}
+                        <a class="btn btn-primary btn-block"
+                           href="{% url 'restaurant:login' %}?next={{ request.get_full_path|urlencode }}">
+                            Add to cart
+                        </a>
+                        <p class="login-hint">Login is required to add dishes to your cart.</p>
+                    {% endif %}
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">
+        <h2>No dishes match these filters</h2>
+        <p>Try another combination or clear the filters to see the full menu.</p>
+        <a class="btn btn-primary" href="{% url 'restaurant:product_list' %}">Clear filters</a>
+    </div>
+{% endif %}
+{% endblock %}

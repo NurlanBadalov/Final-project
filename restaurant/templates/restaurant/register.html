@@ -1,0 +1,45 @@
+{% extends "restaurant/base.html" %}
+
+{% block title %}Register &middot; Online Restaurant{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <section class="auth-card">
+        <h1>Create your account</h1>
+        <p class="muted">A private, empty cart is created automatically for every new user.</p>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
+
+            {% if form.non_field_errors %}
+                <div class="form-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            {% for field in form %}
+                <div class="form-row">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <div class="form-help">{{ field.help_text|safe }}</div>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="field-error">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <button class="btn btn-primary btn-block" type="submit">Register</button>
+        </form>
+
+        <p class="auth-switch">
+            Already registered?
+            <a href="{% url 'restaurant:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">
+                Log in
+            </a>
+        </p>
+    </section>
+</div>
+{% endblock %}
